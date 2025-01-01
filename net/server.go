@@ -38,6 +38,7 @@ func (s *Server) Start() {
 		}
 		fmt.Println("Start server ", s.Name, "success, now listening...")
 
+		var cid uint32 = 0
 		// Server loops and waits for client connection
 		for {
 			conn, err := listenner.AcceptTCP()
@@ -46,21 +47,10 @@ func (s *Server) Start() {
 				continue
 			}
 
-			go func() {
-				for {
-					buff := make([]byte, 512)
-					count, err := conn.Read(buff)
-					if err != nil {
-						fmt.Println("Receive buffer error:", err)
-						return
-					}
+			dealConn := NewConnection(conn, cid, CallBackToClient)
+			cid++
 
-					if _, err := conn.Write(buff[:count]); err != nil {
-						fmt.Println("Write back buff error:", err)
-						return
-					}
-				}
-			}()
+			go dealConn.Start()
 		}
 	}()
 }
@@ -73,4 +63,13 @@ func (s *Server) Serve() {
 	s.Start()
 
 	select {}
+}
+
+func CallBackToClient(conn *net.TCPConn, data []byte, count int) error {
+	fmt.Println("[Conn Handle] CallBackToClient...")
+	if _, err := conn.Write(data[:count]); err != nil {
+		fmt.Println("Write back buff error:", err)
+		return err
+	}
+	return nil
 }
