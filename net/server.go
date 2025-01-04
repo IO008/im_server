@@ -2,6 +2,7 @@ package net
 
 import (
 	"fmt"
+	"im_server/iface"
 	"net"
 )
 
@@ -10,6 +11,7 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
+	Router    iface.IRouter
 }
 
 func NewServer(name string) *Server {
@@ -18,6 +20,7 @@ func NewServer(name string) *Server {
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Router:    nil,
 	}
 }
 
@@ -47,7 +50,7 @@ func (s *Server) Start() {
 				continue
 			}
 
-			dealConn := NewConnection(conn, cid, CallBackToClient)
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 
 			go dealConn.Start()
@@ -65,11 +68,7 @@ func (s *Server) Serve() {
 	select {}
 }
 
-func CallBackToClient(conn *net.TCPConn, data []byte, count int) error {
-	fmt.Println("[Conn Handle] CallBackToClient...")
-	if _, err := conn.Write(data[:count]); err != nil {
-		fmt.Println("Write back buff error:", err)
-		return err
-	}
-	return nil
+func (s *Server) AddRouter(router iface.IRouter) {
+	s.Router = router
+	fmt.Println("Add Router success")
 }
